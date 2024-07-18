@@ -1,0 +1,63 @@
+version: "3"
+
+dotenv:
+    - .env
+    - "{{.ENV}}/.env."
+    - "{{.HOME}}/.env"
+
+vars:
+    LOG_LEVEL: INFO
+
+env:
+    REDPANDA_VERSION: latest
+    REDPANDA_CONSOLE_VERSION: latest
+    GRAFANA_VERSION: latest
+    PROMETHEUS_VERSION: latest
+    ALERT_MANAGER_VERSION: latest
+    MAILPIT_VERSION: latest
+    MINIO_VERSION: latest
+    SCHEMA_REGISTRY_URL: http://localhost:18081
+    REDPANDA_SEED_URL: localhost:19092
+
+tasks:
+    check:
+        cmds:
+            - trunk check -a
+
+    clean:
+        cmds:
+            - task: demo-stop
+            - rm -f docker/mailpit/data/mailpit.*
+
+    demo-start:
+        cmds:
+            - task: docker-up
+            - sleep 10
+            - rpk profile create demo --from-profile rpk-docker-profile.yml
+            - rpk profile use demo
+            # - rpk registry schema create demo-value --schema schemas/demo.avsc
+            - rpk topic create __redpanda.connect.logs demo
+            - echo "Grafana running on http://localhost:3000"
+            - echo "Redpanda console running on http://localhost:8080"
+            - echo "Mailpit running on http://localhost:8025"
+            - echo "Prometheus running on http://localhost:9090"
+            - echo "Alertmanager running on http://localhost:9093"
+            - echo "Minio running on http://localhost:9001"
+
+    docker-up:
+        cmds:
+            - docker-compose up -d --wait-timeout 60
+
+    docker-stop:
+        cmds:
+            - docker-compose down -v
+
+    demo-stop:
+        cmds:
+            - docker-compose down -v --remove-orphans
+            - rm -rf docker/minio/data/demobucket docker/minio/data/.minio.sys
+            - rpk profile delete demo
+
+    demo-cp:
+        cmds:
+            - cp data/demo.tsv docker/minio/data/demobucket/
