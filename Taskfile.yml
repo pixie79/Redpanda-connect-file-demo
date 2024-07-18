@@ -15,9 +15,13 @@ env:
     PROMETHEUS_VERSION: latest
     ALERT_MANAGER_VERSION: latest
     MAILPIT_VERSION: latest
-    MINIO_VERSION: latest
+    LOCALSTACK_VERSION: latest
+    AWS_CLI_VERSION: latest
     SCHEMA_REGISTRY_URL: http://localhost:18081
     REDPANDA_SEED_URL: localhost:19092
+    AWS_ACCESS_KEY_ID: AKIAIOSFODNN7EXAMPLE
+    AWS_SECRET_ACCESS_KEY: wJalrXUtnFEMIK7MDENGbPxRfiCYEXAMPLEKEY
+    AWS_REGION: us-east-1
 
 tasks:
     check:
@@ -42,22 +46,22 @@ tasks:
             - echo "Mailpit running on http://localhost:8025"
             - echo "Prometheus running on http://localhost:9090"
             - echo "Alertmanager running on http://localhost:9093"
-            - echo "Minio running on http://localhost:9001"
+            - echo "Localstack running on http://localhost:4566"
 
     docker-up:
         cmds:
             - docker-compose up -d --wait-timeout 60
 
-    docker-stop:
-        cmds:
-            - docker-compose down -v
-
     demo-stop:
         cmds:
             - docker-compose down -v --remove-orphans
-            - rm -rf docker/minio/data/demobucket docker/minio/data/.minio.sys
+            - rm -rf docker/localstack/*
             - rpk profile delete demo
 
     demo-cp:
         cmds:
-            - cp data/demo.tsv docker/minio/data/demobucket/
+            - aws --endpoint-url=http://localhost:4566 s3 cp data/demo.csv s3://demobucket/
+
+    demo-connect:
+        cmds:
+            - docker run --rm -v $PWD/config:/config -p 4195:4195 docker.redpanda.com/redpandadata/redpanda connect run /config/connect.yaml
