@@ -1,7 +1,7 @@
 http:
-  enabled: true
+  enabled: false
   address: 0.0.0.0:4195
-  root_path: /
+  root_path: /benthos
   debug_endpoints: false
   cert_file: ""
   key_file: ""
@@ -20,16 +20,18 @@ input:
   aws_s3:
     bucket: "demobucket"
     region: us-east-1
-    endpoint: http://localhost:4566
+    endpoint: http://localstack:4566
     credentials:
       id: AKIAIOSFODNN7EXAMPLE
       secret: wJalrXUtnFEMIK7MDENGbPxRfiCYEXAMPLEKEY
-    force_path_style_urls: false
+    force_path_style_urls: true
     delete_objects: false
     scanner:
       to_the_end: {}
     sqs:
-      url: "http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/demoqueue"
+      url: "http://localstack:4566/000000000000/demoqueue"
+      key_path: Records.*.s3.object.key
+      bucket_path: Records.*.s3.bucket.name
       max_messages: 10
 buffer:
   none: {}

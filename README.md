@@ -18,12 +18,6 @@ Setup the demo environment
  task demo-start
 ```
 
-To run the connect profile
-
-```zsh
-task demo-connect
-```
-
 To load the file into s3 and trigger the bucket notification
 
 ```zsh
