@@ -1,0 +1,78 @@
+{
+    "type": "record",
+    "name": "demoCustomerEvent",
+    "namespace": "com.example.demo.event.v1",
+    "fields": [
+        {
+            "name": "metadata",
+            "type": {
+                "type": "record",
+                "name": "Metadata",
+                "fields": [
+                    {
+                        "name": "batchId",
+                        "type": "int",
+                        "doc": "The batch identifier"
+                    },
+                    {
+                        "name": "count",
+                        "type": "string",
+                        "doc": "The number of records in the batch"
+                    },
+                    {
+                        "name": "timestamp",
+                        "type": {
+                            "type": "long",
+                            "logicalType": "timestamp-millis"
+                        },
+                        "doc": "The service timestamp value associated with the commit point in the platform database giving rise to the INSERT operation recorded in 'milliseconds since epoch' format"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "payload",
+            "type": {
+                "type": "record",
+                "name": "payload",
+                "fields": [
+                    {
+                        "name": "title",
+                        "type": "string",
+                        "doc": "ENUM - Title for the party. DOCT - Doctor, MIST - Mr, MISS - Miss, MADM - Madame"
+                    },
+                    {
+                        "name": "dateOfBirth",
+                        "type": "int",
+                        "doc": "Date party was born"
+                    },
+                    {
+                        "name": "firstname",
+                        "type": "string",
+                        "doc": "The first name of the party"
+                    },
+                    {
+                        "name": "identityNumber",
+                        "type": "string",
+                        "doc": "The unique key that has been internally assigned to the party"
+                    },
+                    {
+                        "name": "org",
+                        "type": "string",
+                        "doc": "The organisation identifier"
+                    },
+                    {
+                        "name": "surname",
+                        "type": "string",
+                        "doc": "The surname of the party"
+                    },
+                    {
+                        "name": "userId",
+                        "type": "string",
+                        "doc": "The unique identifier of the party"
+                    }
+                ]
+            }
+        }
+    ]
+}

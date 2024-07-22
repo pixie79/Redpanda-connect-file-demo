@@ -1,41 +1,39 @@
 version: "3"
 
 dotenv:
-    - .env
-    - "{{.ENV}}/.env."
-    - "{{.HOME}}/.env"
+  - .env
+  - "{{.ENV}}/.env."
+  - "{{.HOME}}/.env"
 
 vars:
-    LOG_LEVEL: INFO
+  LOG_LEVEL: INFO
 
 tasks:
-    check:
-        cmds:
-            - trunk check -a
+  check:
+    cmds:
+      - trunk check -a
 
-    clean:
-        cmds:
-            - task: demo-stop
-            - rm -f docker/mailpit/data/mailpit.*
+  clean:
+    cmds:
+      - task: demo-stop
 
-    demo-start:
-        cmds:
-            - docker-compose up -d --wait-timeout 60
-            - sleep 10
-            - rpk profile create demo --from-profile rpk-docker-profile.yml
-            - rpk profile use demo
-            # - rpk registry schema create demo-value --schema schemas/demo.avsc
-            - rpk topic create __redpanda.connect.logs demo
-            - echo "Grafana running on http://localhost:3000"
-            - echo "Redpanda console running on http://localhost:8080"
-            - echo "Localstack running on http://localhost:4566"
+  demo-start:
+    cmds:
+      - docker-compose up -d --wait-timeout 60
+      - sleep 10
+      - rpk profile create demo --from-profile rpk-docker-profile.yml
+      - rpk profile use demo
+      - rpk registry schema create demo-value --schema schemas/demo.avsc
+      - rpk topic create demo
+      - echo "Redpanda console running on http://localhost:8080"
+      - echo "Localstack running on http://localhost:4566"
 
-    demo-stop:
-        cmds:
-            - docker-compose down -v --remove-orphans
-            - rm -rf docker/localstack/*
-            - rpk profile delete demo
+  demo-stop:
+    cmds:
+      - docker-compose down -v --remove-orphans
+      - rm -rf docker/localstack/*
+      - rpk profile delete demo
 
-    demo-cp:
-        cmds:
-            - aws --endpoint-url=http://localhost:4566 s3 cp data/demo.csv s3://demobucket/
+  demo-cp:
+    cmds:
+      - aws --endpoint-url=http://localhost:4566 s3 cp data/demo.csv s3://demobucket/

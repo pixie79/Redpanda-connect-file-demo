@@ -17,66 +17,63 @@ terms:
     Max data processing per day: 10 MB
   billing: 5 USD per month
   noticePeriod: P3M
-fileFormat:
-  controlLine:
-    description: Indicates the start of the file.
-    format: "C|<version_number>"
-    example: "C|1"
-    fields:
-      - name: version_number
-        type: integer
-        description: Version number of the file format.
-  headerLine:
-    description: Defines the structure of the data lines.
-    format: "H|userId|org|firstname|surname|identityNumber|dateOfBirth"
-    example: "H|userId|org|firstname|surname|identityNumber|dateOfBirth"
-  dataLines:
+models:
+  users:
     description: Contains the actual data records.
     format: "D|<userId>|<org>|<firstname>|<surname>|<identityNumber>|<dateOfBirth>"
     example: "D|USROAm_0W|1|John|Doe|123456789|1983-05-26 21:14:19.34"
     fields:
-      - name: userId
+      userId:
         type: string
         description: Unique identifier for the user.
-      - name: org
+      org:
         type: integer
         description: Organization identifier.
-      - name: firstname
+      firstname:
         type: string
         description: First name of the user.
-      - name: surname
+      surname:
         type: string
         description: Last name of the user.
-      - name: identityNumber
+      identityNumber:
         type: string
         description: Identity number of the user. Can be empty.
-      - name: dateOfBirth
+      dateOfBirth:
         type: timestamp
         description: Date and time of birth of the user.
         format: "YYYY-MM-DD HH:MM:SS.sss"
-  sectionTailSummaryLine:
-    description: Provides a summary of the section including the count of records and the production timestamp.
-    format: "T|<record_count>|<production_timestamp>"
-    example: "T|10|2024-07-18 08:00:00.00"
-    fields:
-      - name: record_count
-        type: integer
-        description: Number of data records in the section.
-      - name: production_timestamp
-        type: timestamp
-        description: Timestamp when the section was produced.
-        format: "YYYY-MM-DD HH:MM:SS.sss"
-
+    controlLine:
+      description: Indicates the start of the file.
+      format: "C|<version_number>"
+      example: "C|1"
+      fields:
+        version_number:
+          type: integer
+          description: Version number of the file format.
+    headerLine:
+      description: Defines the structure of the data lines.
+      format: "H|userId|org|firstname|surname|identityNumber|dateOfBirth"
+      example: "H|userId|org|firstname|surname|identityNumber|dateOfBirth"
+    sectionTailSummaryLine:
+      description: Provides a summary of the section including the count of records and the production timestamp.
+      format: "T|<record_count>|<org>|<production_timestamp>"
+      example: "T|10|1|2024-07-18 08:00:00.00"
+      fields:
+        record_count:
+          type: integer
+          description: Number of data records in the section.
+        org:
+          type: integer
+          description: Organization identifier.
+        production_timestamp:
+          type: timestamp
+          description: Timestamp when the section was produced.
+          format: "YYYY-MM-DD HH:MM:SS.sss"
 examples:
   - type: csv
-    model: controlLine
-    data: "C|1"
-  - type: csv
-    model: headerLine
-    data:  H|userId|org|firstname|surname|identityNumber|dateOfBirth
-  - type: csv
-    model: dataLines
     data: |-
+      C|1
+      H|userId|org|firstname|surname|identityNumber|dateOfBirth
       D|USROAm_0W|1|John|Doe|123456789|1983-05-26 21:14:19.34
       D|USRycj08J|1|Amelia|Wales||2001-04-03 12:56:11.548
       D|USRYENkSS|1|Fred|Young|123456789|1974-11-18 09:47:29.253
@@ -87,9 +84,7 @@ examples:
       D|USRp873nu|1|Michael|King|987654321|2020-03-01 14:59:26.597
       D|USRwDmMNv|1|Emily|Childs|123456789|1976-09-15 12:46:34.624
       D|USR6rJcMn|1|Ruby|Johnson|987654321|1994-11-21 19:19:31.63
-  - type: csv
-    model: sectionTailSummaryLine
-    data: T|10|2024-07-18 08:00:00.00
+      T|10|1|2024-07-18 08:00:00.00
 servicelevels:
   availability:
     description: The server is available during support hours

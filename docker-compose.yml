@@ -4,128 +4,128 @@ name: redpanda-demo
 #         driver: bridge
 
 volumes:
-    redpanda: null
+  redpanda: null
 
 services:
-    redpanda:
-        command:
-            - redpanda
-            - start
-            - --kafka-addr internal://0.0.0.0:9092,external://0.0.0.0:19092
-            - --advertise-kafka-addr internal://redpanda:9092,external://localhost:19092
-            - --pandaproxy-addr internal://0.0.0.0:8082,external://0.0.0.0:18082
-            - --advertise-pandaproxy-addr internal://redpanda:8082,external://localhost:18082
-            - --schema-registry-addr internal://0.0.0.0:8081,external://0.0.0.0:18081
-            - --rpc-addr redpanda:33145
-            - --advertise-rpc-addr redpanda:33145
-            - --mode dev-container
-            - --smp 1
-            - --default-log-level=info
-        image: docker.redpanda.com/redpandadata/redpanda:${REDPANDA_VERSION}
-        container_name: redpanda
-        volumes:
-            - redpanda:/var/lib/redpanda/data
-            - ./.bootstrap.yaml:/etc/redpanda/.bootstrap.yaml
-        # networks:
-        #     - redpanda_network
-        ports:
-            - 18081:18081
-            - 18082:18082
-            - 19092:19092
-            - 19644:9644
+  redpanda:
+    command:
+      - redpanda
+      - start
+      - --kafka-addr internal://0.0.0.0:9092,external://0.0.0.0:19092
+      - --advertise-kafka-addr internal://redpanda:9092,external://localhost:19092
+      - --pandaproxy-addr internal://0.0.0.0:8082,external://0.0.0.0:18082
+      - --advertise-pandaproxy-addr internal://redpanda:8082,external://localhost:18082
+      - --schema-registry-addr internal://0.0.0.0:8081,external://0.0.0.0:18081
+      - --rpc-addr redpanda:33145
+      - --advertise-rpc-addr redpanda:33145
+      - --mode dev-container
+      - --smp 1
+      - --default-log-level=info
+    image: docker.redpanda.com/redpandadata/redpanda:${REDPANDA_VERSION}
+    container_name: redpanda
+    volumes:
+      - redpanda:/var/lib/redpanda/data
+      - ./.bootstrap.yaml:/etc/redpanda/.bootstrap.yaml
+    # networks:
+    #     - redpanda_network
+    ports:
+      - 18081:18081
+      - 18082:18082
+      - 19092:19092
+      - 19644:9644
 
-    console:
-        container_name: redpanda-console
-        image: docker.redpanda.com/redpandadata/console:${REDPANDA_CONSOLE_VERSION}
-        # networks:
-        #     - redpanda_network
-        entrypoint: /bin/sh
-        command: -c 'echo "$$CONSOLE_CONFIG_FILE" > /tmp/config.yml; /app/console'
-        links:
-            - redpanda
-        environment:
-            CONFIG_FILEPATH: /tmp/config.yml
-            CONSOLE_CONFIG_FILE: |
-                kafka:
-                  brokers: ["redpanda:9092"]
-                  schemaRegistry:
-                    enabled: true
-                    urls: ["http://redpanda:8081"]
-                redpanda:
-                  adminApi:
-                    enabled: true
-                    urls: ["http://redpanda:9644"]
-                connect:
-                  enabled: false
-                  clusters:
-                    - name: connect
-                      url: http://connect:8083
-        ports:
-            - 8080:8080
-        depends_on:
-            - redpanda
+  console:
+    container_name: redpanda-console
+    image: docker.redpanda.com/redpandadata/console:${REDPANDA_CONSOLE_VERSION}
+    # networks:
+    #     - redpanda_network
+    entrypoint: /bin/sh
+    command: -c 'echo "$$CONSOLE_CONFIG_FILE" > /tmp/config.yml; /app/console'
+    links:
+      - redpanda
+    environment:
+      CONFIG_FILEPATH: /tmp/config.yml
+      CONSOLE_CONFIG_FILE: |
+        kafka:
+          brokers: ["redpanda:9092"]
+          schemaRegistry:
+            enabled: true
+            urls: ["http://redpanda:8081"]
+        redpanda:
+          adminApi:
+            enabled: true
+            urls: ["http://redpanda:9644"]
+        connect:
+          enabled: false
+          clusters:
+            - name: connect
+              url: http://connect:8083
+    ports:
+      - 8080:8080
+    depends_on:
+      - redpanda
 
-    localstack:
-        image: localstack/localstack:${LOCALSTACK_VERSION}
-        container_name: localstack
-        # networks:
-        #     - redpanda_network
-        ports:
-            - "4510-4559:4510-4559"
-            - "4566:4566"
-        environment:
-            - GATEWAY_LISTEN=0.0.0.0:4566
-            - EXTERNAL_SERVICE_PORTS_START=4510
-            - EXTERNAL_SERVICE_PORTS_END=4559
-            - SERVICES=s3,sqs
-            - DEBUG=1
-        volumes:
-            - "./docker/localstack:/var/lib/localstack"
-            - "/var/run/docker.sock:/var/run/docker.sock"
+  localstack:
+    image: localstack/localstack:${LOCALSTACK_VERSION}
+    container_name: localstack
+    # networks:
+    #     - redpanda_network
+    ports:
+      - "4510-4559:4510-4559"
+      - "4566:4566"
+    environment:
+      - GATEWAY_LISTEN=0.0.0.0:4566
+      - EXTERNAL_SERVICE_PORTS_START=4510
+      - EXTERNAL_SERVICE_PORTS_END=4559
+      - SERVICES=s3,sqs
+      - DEBUG=1
+    volumes:
+      - "./docker/localstack:/var/lib/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
 
-    s3_event_listener:
-        image: amazon/aws-cli:${AWS_CLI_VERSION}
-        container_name: s3_event_listener
-        # networks:
-        #     - redpanda_network
-        depends_on:
-            - localstack
-        environment:
-            AWS_ACCESS_KEY_ID: "AKIAIOSFODNN7EXAMPLE"
-            AWS_SECRET_ACCESS_KEY: "wJalrXUtnFEMIK7MDENGbPxRfiCYEXAMPLEKEY"
-            AWS_REGION: "us-east-1"
-        links:
-            - localstack
-        entrypoint: >
-            /bin/sh -c "
-            sleep 20 &&
-            aws --endpoint-url=http://localstack:4566 s3api create-bucket --bucket demobucket &&
-            aws --endpoint-url=http://localstack:4566 s3api put-bucket-acl --bucket demobucket --acl public-read &&
-            aws --endpoint-url=http://localstack:4566 sqs create-queue --queue-name demoqueue &&
-            aws --endpoint-url=http://localstack:4566 s3api put-bucket-notification-configuration --bucket demobucket --notification-configuration '{
-                \"QueueConfigurations\": [
-                {
-                    \"QueueArn\": \"arn:aws:sqs:us-east-1:000000000000:demoqueue\",
-                    \"Events\": [\"s3:ObjectCreated:*\"] 
-                }
-                ]
-            }' &&
-            tail -f /dev/null
-            "
+  s3_event_listener:
+    image: amazon/aws-cli:${AWS_CLI_VERSION}
+    container_name: s3_event_listener
+    # networks:
+    #     - redpanda_network
+    depends_on:
+      - localstack
+    environment:
+      AWS_ACCESS_KEY_ID: "AKIAIOSFODNN7EXAMPLE"
+      AWS_SECRET_ACCESS_KEY: "wJalrXUtnFEMIK7MDENGbPxRfiCYEXAMPLEKEY"
+      AWS_REGION: "us-east-1"
+    links:
+      - localstack
+    entrypoint: >
+      /bin/sh -c "
+      sleep 20 &&
+      aws --endpoint-url=http://localstack:4566 s3api create-bucket --bucket demobucket &&
+      aws --endpoint-url=http://localstack:4566 s3api put-bucket-acl --bucket demobucket --acl public-read &&
+      aws --endpoint-url=http://localstack:4566 sqs create-queue --queue-name demoqueue &&
+      aws --endpoint-url=http://localstack:4566 s3api put-bucket-notification-configuration --bucket demobucket --notification-configuration '{
+          \"QueueConfigurations\": [
+          {
+              \"QueueArn\": \"arn:aws:sqs:us-east-1:000000000000:demoqueue\",
+              \"Events\": [\"s3:ObjectCreated:*\"] 
+          }
+          ]
+      }' &&
+      tail -f /dev/null
+      "
 
-    connect:
-        image: docker.redpanda.com/redpandadata/redpanda:${REDPANDA_VERSION}
-        container_name: connect
-        # networks:
-        #     - redpanda_network
-        volumes:
-            - ./config:/config
-        command: connect run /config/connect.yaml
-        links:
-            - redpanda
-            - localstack:demobucket.localstack
-        # extra_hosts:
-        #     - "demobucket.localstack:172.18.0.1"
-        depends_on:
-            - redpanda
-            - localstack
+  connect:
+    image: docker.redpanda.com/redpandadata/redpanda:${REDPANDA_VERSION}
+    container_name: connect
+    # networks:
+    #     - redpanda_network
+    volumes:
+      - ./config:/config
+    command: connect run /config/connect.yaml
+    links:
+      - redpanda
+      - localstack:demobucket.localstack
+    # extra_hosts:
+    #     - "demobucket.localstack:172.18.0.1"
+    depends_on:
+      - redpanda
+      - localstack

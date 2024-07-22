@@ -26,20 +26,69 @@ input:
       secret: wJalrXUtnFEMIK7MDENGbPxRfiCYEXAMPLEKEY
     force_path_style_urls: true
     delete_objects: false
-    scanner:
-      to_the_end: {}
     sqs:
       url: "http://localstack:4566/000000000000/demoqueue"
       key_path: Records.*.s3.object.key
       bucket_path: Records.*.s3.bucket.name
       max_messages: 10
+    scanner:
+      to_the_end: {}
 buffer:
   none: {}
 pipeline:
   threads: -1
-  processors: []
+  processors:
+    - mapping: |
+        map to_json {
+        let header = this.header
+        let row = this.row
+        root = match $row.index(0) {
+            "D" => {"payload": $header.zip($row.slice(1)).map_each(r -> {r.index(0): r.index(1)}).squash()}
+            "T" => {"metadata":{"count": $row.index(1), "org": $row.index(2), "timestamp": $row.index(3).ts_unix_milli(), "is_summary": true}}
+            _ => deleted() #junk
+          }    
+        }
+
+        map apply_metadata {
+          let metadata = this.metadata
+          root.payload = this.payload
+          root.payload.dateOfBirth = root.payload.dateOfBirth.ts_strptime("%Y-%m-%d").ts_unix()
+          root.metadata = $metadata.map_each(r -> r).filter(r -> r.org == root.payload.org).index(0)
+          root.metadata.batchId = this.batchId
+          root.metadata.org = deleted()
+          root.metadata.is_summary = deleted()
+        }
+
+        let batchId = content().split("\n").map_each(r -> r.string()).index(0).split("|").index(1).number()
+        let data = content().split("\n").map_each(r -> r.string()).slice(1)
+
+        let header = $data.index(0).split("|").slice(1)
+
+        let data = $data.slice(1).map_each(r -> {"header": $header, "row": r.split("|")}.apply("to_json"))
+        let payloads = $data.map_each(r -> r.payload).filter(r -> r.exists("org"))
+        let metadata = $data.map_each(r -> r.metadata).filter(r -> r.is_summary == true)
+
+        root = $payloads.map_each(r -> {"payload": r, "metadata": $metadata, "batchId": $batchId}.apply("apply_metadata"))
+    - unarchive:
+        format: json_array
+    - mapping: |
+        meta kafka_key = this.payload.identityNumber.string()
+    - schema_registry_encode:
+        url: "http://redpanda:8081"
+        subject: "demo-value"
+        refresh_period: 10m
+    - catch:
+        - log:
+            message: ${! error()}
 output:
-  stdout: {}
+  kafka_franz:
+    seed_brokers:
+      - redpanda:9092
+    topic: demo
+    key: ${! metadata("kafka_key") }
+    metadata:
+      include_prefixes:
+        - .*
 input_resources: []
 processor_resources: []
 output_resources: []
@@ -53,7 +102,7 @@ logger:
   timestamp_name: time
   message_name: msg
   static_fields:
-    '@service': benthos
+    "@service": benthos
   file:
     path: ""
     rotate: false
@@ -67,7 +116,7 @@ shutdown_delay: 0s
 shutdown_timeout: 20s
 tests: []
 redpanda:
-  seed_brokers: []
+  seed_brokers: [redpanda:9092]
   logs_topic: __redpanda.connect.logs
   logs_level: info
   client_id: benthos
@@ -82,4 +131,3 @@ redpanda:
     root_cas_file: ""
     client_certs: []
   sasl: []
-
