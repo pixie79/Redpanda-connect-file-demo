@@ -16,18 +16,18 @@ http:
     algorithm: sha256
     salt: ""
 input:
-  label: "localstack"
+  label: localstack
   aws_s3:
-    bucket: "demobucket"
+    bucket: demobucket
     region: us-east-1
     endpoint: http://localstack:4566
     credentials:
-      id: AKIAIOSFODNN7EXAMPLE
-      secret: wJalrXUtnFEMIK7MDENGbPxRfiCYEXAMPLEKEY
+      id: AKIAIOSFODNN7EXAMPLE # trunk-ignore(checkov/CKV_SECRET_2)
+      secret: wJalrXUtnFEMIK7MDENGbPxRfiCYEXAMPLEKEY # trunk-ignore(checkov/CKV_SECRET_6)
     force_path_style_urls: true
     delete_objects: false
     sqs:
-      url: "http://localstack:4566/000000000000/demoqueue"
+      url: http://localstack:4566/000000000000/demoqueue
       key_path: Records.*.s3.object.key
       bucket_path: Records.*.s3.bucket.name
       max_messages: 10
@@ -74,21 +74,27 @@ pipeline:
     - mapping: |
         meta kafka_key = this.payload.identityNumber.string()
     - schema_registry_encode:
-        url: "http://redpanda:8081"
-        subject: "demo-value"
+        url: http://redpanda:8081
+        subject: demo-value
         refresh_period: 10m
-    - catch:
-        - log:
-            message: ${! error()}
+    # - catch:
+    #     - log:
+    #         message: ${! error()}
 output:
-  kafka_franz:
-    seed_brokers:
-      - redpanda:9092
-    topic: demo
-    key: ${! metadata("kafka_key") }
-    metadata:
-      include_prefixes:
-        - .*
+  fallback:
+    - reject_errored:
+        kafka_franz:
+          seed_brokers:
+            - redpanda:9092
+          topic: demo
+          key: ${! metadata("kafka_key") }
+          metadata:
+            include_prefixes:
+              - .*payload.*
+    - kafka_franz:
+          seed_brokers:
+            - redpanda:9092
+          topic: demo-dlq
 input_resources: []
 processor_resources: []
 output_resources: []

@@ -29,3 +29,6 @@ To stop and clean up the demo environment
 ```zsh
 task demo-stop
 ```
+
+When the demo is running you can do *task logs* to see the docker logs for the connect container. Please do ignore the first 30 seconds of log (hence the sleep in the startup)
+as this is while the containers settle down and the bucket / sqs queue is being setup.

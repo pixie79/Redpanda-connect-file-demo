@@ -20,11 +20,11 @@ tasks:
   demo-start:
     cmds:
       - docker-compose up -d --wait-timeout 60
-      - sleep 10
+      - sleep 30
       - rpk profile create demo --from-profile rpk-docker-profile.yml
       - rpk profile use demo
       - rpk registry schema create demo-value --schema schemas/demo.avsc
-      - rpk topic create demo
+      - rpk topic create demo demo-dlq
       - echo "Redpanda console running on http://localhost:8080"
       - echo "Localstack running on http://localhost:4566"
 
@@ -37,3 +37,8 @@ tasks:
   demo-cp:
     cmds:
       - aws --endpoint-url=http://localhost:4566 s3 cp data/demo.csv s3://demobucket/
+      - aws --endpoint-url=http://localhost:4566 s3 cp data/demo-bad.csv s3://demobucket/
+
+  logs:
+    cmds:
+      - docker logs connect -f

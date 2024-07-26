@@ -1,0 +1,104 @@
+dataContractSpecification: 0.9.3
+id: my-data-contract-id
+info:
+  title: User Extract
+  version: 0.0.1
+  status: active
+  description: demo user per organisation extract
+terms:
+  usage: |
+    Data can be used for demo purposes only. To show how to load Tab seperated 
+    batch data into Redpanda.
+  limitations: |
+    Not suitable for real-time use cases.
+    Data may not be used to identify individual customers.
+    Max data processing per day: 10 MB
+  billing: 5 USD per month
+  noticePeriod: P3M
+models:
+  demoCustomerEvent:
+    namespace: com.example.demo.event.v1
+    fields:
+      metadata:
+        type: object
+        required: true
+        fields:
+          batchId:
+            type: int
+            required: true
+            description: The batch identifier
+          count:
+            type: string
+            required: true
+            description: The number of records in the batch
+          timestamp:
+            type: long
+            required: true
+            description: The service timestamp value associated with the commit point
+              in the platform database giving rise to the INSERT operation recorded
+              in 'milliseconds since epoch' format
+      payload:
+        type: object
+        required: true
+        fields:
+          title:
+            type: string
+            required: true
+            description: ENUM - Title for the party. DOCT - Doctor, MIST - Mr, MISS
+              - Miss, MADM - Madame
+          dateOfBirth:
+            type: int
+            required: true
+            description: Date party was born
+          firstname:
+            type: string
+            required: true
+            description: The first name of the party
+          identityNumber:
+            type: string
+            required: true
+            description: The unique key that has been internally assigned to the party
+          org:
+            type: string
+            required: true
+            description: The organisation identifier
+          surname:
+            type: string
+            required: true
+            description: The surname of the party
+          userId:
+            type: string
+            required: true
+            description: The unique identifier of the party
+servicelevels:
+  availability:
+    description: The server is available during support hours
+    percentage: 99.9%
+  retention:
+    description: Data is retained for one year
+    period: P1Y
+    unlimited: false
+  latency:
+    description: Data is available once per day
+    threshold: 25h
+    sourceTimestampField: production_timestamp
+    processedTimestampField: production_timestamp
+  freshness:
+    description: The age of the youngest row in a table.
+    threshold: 25h
+    timestampField: production_timestamp
+  frequency:
+    description: Data is delivered once a day
+    type: batch # or streaming
+    interval: daily # for batch, either or cron
+    cron: 0 0 * * * # for batch, either or interval
+  support:
+    description: The data is available during typical business hours at headquarters
+    time: 9am to 5pm in EST on business days
+    responseTime: 1h
+  backup:
+    description: Data is backed up once a week, every Sunday at 0:00 UTC.
+    interval: weekly
+    cron: 0 0 * * 0
+    recoveryTime: 24 hours
+    recoveryPoint: 1 week
